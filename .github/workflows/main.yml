@@ -1,4 +1,4 @@
-name: Build Manus Agent APK (Final Attempt)
+name: Build Manus Agent APK (Absolute Solution)
 
 on:
   push:
@@ -21,19 +21,17 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # 3. إنشاء ملف gradlew مع تحديد إصدار متوافق (هذا هو الجزء الجديد والحاسم)
-    - name: Generate gradlew wrapper for a compatible Gradle version
-      run: gradle wrapper --gradle-version 8.3
+    # 3. تثبيت إصدار Gradle الصحيح والمحدد (هذا هو الحل المطلق)
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '8.3'
 
-    # 4. إعطاء إذن التنفيذ للملف الذي تم إنشاؤه للتو
-    - name: Grant execute permission for gradlew
-      run: chmod +x ./gradlew
-
-    # 5. بناء التطبيق
+    # 4. بناء التطبيق باستخدام الأمر gradle مباشرة (وليس gradlew)
     - name: Build with Gradle
-      run: ./gradlew assembleDebug
+      run: gradle assembleDebug
 
-    # 6. رفع ملف APK
+    # 5. رفع ملف APK
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
