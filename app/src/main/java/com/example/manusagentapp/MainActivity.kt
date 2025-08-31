@@ -34,7 +34,6 @@ class MainActivity : ComponentActivity() {
             }
         }
         
-        // --- هذا هو الجزء الذي تم تصحيحه ---
         val intentFilter = IntentFilter().apply {
             addAction("com.example.manusagentapp.TASK_COMPLETED")
             addAction("com.example.manusagentapp.ERROR")
@@ -64,6 +63,8 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// --- هذا هو السطر الذي يحل المشكلة ---
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
     val context = LocalContext.current
