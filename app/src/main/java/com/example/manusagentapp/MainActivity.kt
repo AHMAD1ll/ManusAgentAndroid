@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -18,36 +19,32 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.manusagentapp.service.ManusAccessibilityService
 import com.example.manusagentapp.ui.theme.ManusAgentAppTheme
 
 class MainActivity : ComponentActivity() {
     
-    private var accessibilityService: ManusAccessibilityService? = null
-    private lateinit var taskReceiver: BroadcastReceiver
+    private lateinit var taskUpdateReceiver: BroadcastReceiver
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // تسجيل مستقبل البث للإشعارات
-        taskReceiver = object : BroadcastReceiver() {
+        taskUpdateReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                when (intent?.action) {
-                    "com.example.manusagentapp.TASK_COMPLETED" -> {
-                        // معالجة إكمال المهمة
-                    }
-                    "com.example.manusagentapp.ERROR" -> {
-                        // معالجة الأخطاء
-                    }
-                }
+                // يمكنك إضافة منطق هنا لتحديث الواجهة بناءً على حالة المهمة
             }
         }
         
-        val filter = IntentFilter().apply {
+        // --- هذا هو الجزء الذي تم تصحيحه ---
+        val intentFilter = IntentFilter().apply {
             addAction("com.example.manusagentapp.TASK_COMPLETED")
             addAction("com.example.manusagentapp.ERROR")
         }
-        registerReceiver(taskReceiver, filter)
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(taskUpdateReceiver, intentFilter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(taskUpdateReceiver, intentFilter)
+        }
         
         setContent {
             ManusAgentAppTheme {
@@ -63,11 +60,10 @@ class MainActivity : ComponentActivity() {
     
     override fun onDestroy() {
         super.onDestroy()
-        unregisterReceiver(taskReceiver)
+        unregisterReceiver(taskUpdateReceiver)
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
     val context = LocalContext.current
@@ -75,8 +71,8 @@ fun MainScreen() {
     var userCommand by remember { mutableStateOf("") }
     var isTaskRunning by remember { mutableStateOf(false) }
     
-    // فحص حالة خدمة الوصولية
-    LaunchedEffect(Unit) {
+    // فحص حالة خدمة الوصولية بشكل دوري
+    LaunchedEffect(key1 = isServiceEnabled) {
         isServiceEnabled = isAccessibilityServiceEnabled(context)
     }
     
@@ -88,7 +84,6 @@ fun MainScreen() {
         verticalArrangement = Arrangement.Center
     ) {
         
-        // شعار التطبيق والعنوان
         Text(
             text = "Manus Agent",
             style = MaterialTheme.typography.headlineLarge,
@@ -106,7 +101,6 @@ fun MainScreen() {
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        // حالة خدمة الوصولية
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -149,7 +143,6 @@ fun MainScreen() {
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // واجهة إدخال الأوامر
         if (isServiceEnabled) {
             OutlinedTextField(
                 value = userCommand,
@@ -170,9 +163,10 @@ fun MainScreen() {
                 Button(
                     onClick = {
                         if (userCommand.isNotBlank()) {
-                            // بدء المهمة
                             isTaskRunning = true
-                            // TODO: استدعاء خدمة الوصولية
+                            val serviceIntent = Intent("com.example.manusagentapp.START_TASK")
+                            serviceIntent.putExtra("user_command", userCommand)
+                            context.sendBroadcast(serviceIntent)
                         }
                     },
                     modifier = Modifier.weight(1f),
@@ -192,7 +186,8 @@ fun MainScreen() {
                     OutlinedButton(
                         onClick = {
                             isTaskRunning = false
-                            // TODO: إيقاف المهمة
+                            val serviceIntent = Intent("com.example.manusagentapp.STOP_TASK")
+                            context.sendBroadcast(serviceIntent)
                         },
                         modifier = Modifier.weight(1f)
                     ) {
@@ -200,51 +195,10 @@ fun MainScreen() {
                     }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // أمثلة على الأوامر
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "أمثلة على الأوامر:",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    val examples = listOf(
-                        "افتح تطبيق الواتساب",
-                        "أرسل رسالة إلى أحمد",
-                        "افتح الكاميرا والتقط صورة",
-                        "ابحث عن مطعم قريب في خرائط جوجل"
-                    )
-                    
-                    examples.forEach { example ->
-                        TextButton(
-                            onClick = { userCommand = example },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "• $example",
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Start
-                            )
-                        }
-                    }
-                }
-            }
         }
     }
 }
 
-/**
- * فحص ما إذا كانت خدمة الوصولية مفعلة
- */
 private fun isAccessibilityServiceEnabled(context: Context): Boolean {
     val accessibilityServices = Settings.Secure.getString(
         context.contentResolver,
@@ -252,4 +206,3 @@ private fun isAccessibilityServiceEnabled(context: Context): Boolean {
     )
     return accessibilityServices?.contains("com.example.manusagentapp/.service.ManusAccessibilityService") == true
 }
-
