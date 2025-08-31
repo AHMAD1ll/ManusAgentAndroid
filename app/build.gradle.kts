@@ -1,6 +1,8 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android") // العودة إلى الصيغة الأصلية
+    id("org.jetbrains.kotlin.android")
+    // --- هذه هي الإضافة الجديدة والمهمة ---
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.20"
 }
 
 android {
@@ -40,7 +42,6 @@ android {
         compose = true
     }
     composeOptions {
-        // --- هذا هو الإصدار الصحيح المتوافق مع Kotlin 1.9.20 ---
         kotlinCompilerExtensionVersion = "1.5.4"
     }
     packaging {
@@ -51,6 +52,9 @@ android {
 }
 
 dependencies {
+
+    // --- هذه هي المكتبة الجديدة والمهمة ---
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.18.0")
