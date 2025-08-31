@@ -1,7 +1,6 @@
 plugins {
     id("com.android.application")
-    // --- هذا هو السطر الجديد والمهم ---
-    kotlin("android").version("1.9.22")
+    id("org.jetbrains.kotlin.android") // العودة إلى الصيغة الأصلية
 }
 
 android {
@@ -41,8 +40,8 @@ android {
         compose = true
     }
     composeOptions {
-        // سنبقي هذا الإصدار لأنه يتوافق مع 1.9.22
-        kotlinCompilerExtensionVersion = "1.5.10"
+        // --- هذا هو الإصدار الصحيح المتوافق مع Kotlin 1.9.20 ---
+        kotlinCompilerExtensionVersion = "1.5.4"
     }
     packaging {
         resources {
