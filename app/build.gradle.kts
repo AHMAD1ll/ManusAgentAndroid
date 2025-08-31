@@ -1,7 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    // --- هذه هي الإضافة الجديدة والمهمة ---
+    // --- هذا هو الإضافة الجديدة والمهمة ---
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.20"
 }
 
@@ -55,6 +55,11 @@ dependencies {
 
     // --- هذه هي المكتبة الجديدة والمهمة ---
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+
+    // --- مكتبات Ktor للشبكة والتحميل ---
+    implementation("io.ktor:ktor-client-android:2.3.11")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.11")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11")
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.18.0")
