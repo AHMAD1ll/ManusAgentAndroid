@@ -3,6 +3,7 @@ package com.example.manusagentapp.core
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 
 /**
  * العقل (The Brain) - مكون LLM للذكاء الاصطناعي
@@ -108,6 +109,7 @@ class Brain(private val context: Context) {
 /**
  * خطة المهمة
  */
+@Serializable
 data class TaskPlan(
     val goal: String,
     val steps: List<String>,
@@ -127,12 +129,18 @@ data class TaskPlan(
 /**
  * قرار الإجراء
  */
+@Serializable
 sealed class ActionDecision {
+    @Serializable
     object TaskCompleted : ActionDecision()
+    @Serializable
     data class Click(val bounds: android.graphics.Rect) : ActionDecision()
+    @Serializable
     data class Type(val bounds: android.graphics.Rect, val text: String) : ActionDecision()
+    @Serializable
     data class Scroll(val direction: String) : ActionDecision()
+    @Serializable
     data class Wait(val milliseconds: Long) : ActionDecision()
+    @Serializable
     data class Error(val message: String) : ActionDecision()
 }
-
