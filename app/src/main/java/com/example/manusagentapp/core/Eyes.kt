@@ -3,6 +3,7 @@ package com.example.manusagentapp.core
 import android.accessibilityservice.AccessibilityService
 import android.graphics.Rect
 import android.view.accessibility.AccessibilityNodeInfo
+import kotlinx.serialization.Serializable
 
 /**
  * العين (The Eyes) - محلل الشاشة
@@ -125,6 +126,7 @@ class Eyes(private val accessibilityService: AccessibilityService) {
 /**
  * سياق الشاشة
  */
+@Serializable
 data class ScreenContext(
     val elements: List<UIElement>,
     val timestamp: Long
@@ -157,6 +159,7 @@ data class ScreenContext(
 /**
  * عنصر واجهة المستخدم
  */
+@Serializable
 data class UIElement(
     val id: String,
     val text: String,
@@ -181,4 +184,3 @@ data class UIElement(
         )
     }
 }
-
