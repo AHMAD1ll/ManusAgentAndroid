@@ -9,6 +9,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    # *** السطران الجديدان هنا ***
+    defaults:
+      run:
+        working-directory: ./ManusAgentApp
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -30,4 +35,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: manus-agent-apk
-        path: app/build/outputs/apk/debug/app-debug.apk
+        # *** تم تحديث المسار هنا أيضًا ***
+        path: ManusAgentApp/app/build/outputs/apk/debug/app-debug.apk
