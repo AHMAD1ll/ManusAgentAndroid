@@ -1,23 +1,3 @@
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath("com.android.tools.build:gradle:8.2.0")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20")
-        classpath("org.jetbrains.kotlin:kotlin-serialization:1.9.20")
-    }
-}
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-
-tasks.register("clean", Delete::class) {
-    delete(rootProject.buildDir)
-}
-
+// This file is intentionally left blank.
+// All build script and plugin configuration is now in settings.gradle.kts and app/build.gradle.kts
+// to comply with modern Gradle standards.
