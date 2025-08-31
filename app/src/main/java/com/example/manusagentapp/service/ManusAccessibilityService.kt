@@ -1,228 +1,167 @@
 package com.example.manusagentapp.service
 
 import android.accessibilityservice.AccessibilityService
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.view.accessibility.AccessibilityEvent
 import com.example.manusagentapp.core.*
 import kotlinx.coroutines.*
 
-/**
- * خدمة الوصولية الرئيسية لـ Manus Agent
- * تدير الحلقة الأساسية: Observe -> Decide -> Act
- */
 class ManusAccessibilityService : AccessibilityService() {
-    
+
     private lateinit var brain: Brain
     private lateinit var eyes: Eyes
     private lateinit var hands: Hands
     private lateinit var memory: Memory
-    
+
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var isAgentActive = false
     private var currentTask: Task? = null
-    
+
+    // --- هذا هو الجزء الجديد والمهم ---
+    private val commandReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                "com.example.manusagentapp.START_TASK" -> {
+                    val command = intent.getStringExtra("user_command")
+                    if (!command.isNullOrBlank()) {
+                        startTask(command)
+                    }
+                }
+                "com.example.manusagentapp.STOP_TASK" -> {
+                    stopTask()
+                }
+            }
+        }
+    }
+    // --- نهاية الجزء الجديد ---
+
     override fun onServiceConnected() {
         super.onServiceConnected()
-        
-        // تهيئة المكونات الأساسية
+
         brain = Brain(this)
         eyes = Eyes(this)
         hands = Hands(this)
         memory = Memory(this)
-        
-        // تهيئة العقل (LLM)
+
         serviceScope.launch {
             brain.initialize()
         }
-        
-        // استرداد المهمة المحفوظة إن وجدت
-        serviceScope.launch {
-            currentTask = memory.restoreTaskFromStorage()
+
+        // --- هذا هو الجزء الجديد والمهم ---
+        val intentFilter = IntentFilter().apply {
+            addAction("com.example.manusagentapp.START_TASK")
+            addAction("com.example.manusagentapp.STOP_TASK")
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(commandReceiver, intentFilter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(commandReceiver, intentFilter)
+        }
+        // --- نهاية الجزء الجديد ---
     }
-    
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (!isAgentActive || event == null) return
-        
-        // تشغيل الحلقة الأساسية عند تغيير الشاشة
-        when (event.eventType) {
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
-            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
-                serviceScope.launch {
-                    runAgentLoop()
-                }
-            }
-        }
+        // لا تفعل شيئًا هنا حاليًا، الحلقة ستُدار يدويًا
     }
-    
+
     override fun onInterrupt() {
-        // إيقاف العمليات الجارية
         isAgentActive = false
     }
-    
-    /**
-     * بدء تنفيذ مهمة جديدة
-     */
-    fun startTask(userCommand: String) {
+
+    private fun startTask(userCommand: String) {
+        if (isAgentActive) return // منع بدء مهمة جديدة إذا كانت هناك واحدة قيد التشغيل
+
         serviceScope.launch {
             try {
                 isAgentActive = true
-                
-                // تحليل هدف المستخدم
                 val taskPlan = brain.analyzeUserGoal(userCommand)
-                
-                // بدء المهمة في الذاكرة
                 currentTask = memory.startNewTask(userCommand, taskPlan)
-                
-                // تشغيل الحلقة الأساسية
                 runAgentLoop()
-                
             } catch (e: Exception) {
-                handleError("خطأ في بدء المهمة: ${e.message}")
+                handleError("Error starting task: ${e.message}")
             }
         }
     }
-    
-    /**
-     * إيقاف المهمة الحالية
-     */
-    fun stopTask() {
+
+    private fun stopTask() {
         isAgentActive = false
+        currentTask = null
         serviceScope.launch {
-            memory.updateTaskStatus(TaskStatus.PAUSED)
+            memory.clearMemory() // مسح الذاكرة عند إيقاف المهمة
         }
     }
-    
-    /**
-     * الحلقة الأساسية للوكيل: Observe -> Decide -> Act
-     */
+
     private suspend fun runAgentLoop() {
         if (!isAgentActive || currentTask == null) return
-        
+
         try {
-            // 1. المراقبة (Observe) - تحليل الشاشة الحالية
+            delay(1000) // انتظار قصير قبل كل إجراء
             val screenContext = eyes.analyzeCurrentScreen()
-            
-            // 2. القرار (Decide) - تحديد الإجراء التالي
             val actionDecision = brain.decideNextAction(screenContext, currentTask!!.taskPlan)
-            
-            // 3. التنفيذ (Act) - تنفيذ الإجراء
             val success = executeAction(actionDecision)
-            
-            // 4. التسجيل في الذاكرة
             memory.recordExecutionStep(actionDecision, screenContext, success)
-            
-            // 5. فحص اكتمال المهمة
-            if (actionDecision is ActionDecision.TaskCompleted) {
-                memory.updateTaskStatus(TaskStatus.COMPLETED)
+
+            if (actionDecision is ActionDecision.TaskCompleted || !success) {
+                memory.updateTaskStatus(if (success) TaskStatus.COMPLETED else TaskStatus.FAILED)
                 isAgentActive = false
-                notifyTaskCompleted()
-            } else if (success) {
-                // الانتقال للخطوة التالية
+                notifyUi("TASK_COMPLETED")
+            } else {
                 memory.advanceToNextStep()
-                
-                // انتظار قصير قبل الخطوة التالية
-                delay(1000)
-                
-                // تكرار الحلقة
                 if (isAgentActive) {
-                    runAgentLoop()
+                    runAgentLoop() // استدعاء الحلقة مرة أخرى
                 }
             }
-            
-        } catch (e: LoopDetectedException) {
-            handleError("تم اكتشاف حلقة مفرغة: ${e.message}")
         } catch (e: Exception) {
-            handleError("خطأ في تنفيذ المهمة: ${e.message}")
+            handleError("Error in agent loop: ${e.message}")
         }
     }
-    
-    /**
-     * تنفيذ إجراء محدد
-     */
+
     private suspend fun executeAction(action: ActionDecision): Boolean {
         return when (action) {
-            is ActionDecision.Click -> {
-                hands.clickBounds(action.bounds)
-            }
+            is ActionDecision.Click -> hands.clickBounds(action.bounds)
             is ActionDecision.Type -> {
-                val element = UIElement(
-                    id = "",
-                    text = "",
-                    contentDescription = "",
-                    className = "",
-                    bounds = action.bounds,
-                    isClickable = false,
-                    isEditable = true,
-                    isScrollable = false,
-                    isVisible = true
-                )
-                hands.typeText(element, action.text)
+                // البحث عن العقدة الصحيحة قبل الكتابة
+                val node = eyes.analyzeCurrentScreen().elements.find { it.bounds == action.bounds && it.isEditable }
+                if (node != null) {
+                    hands.typeText(node, action.text)
+                } else {
+                    false
+                }
             }
-            is ActionDecision.Scroll -> {
-                hands.scroll(action.direction)
-            }
-            is ActionDecision.Wait -> {
-                hands.wait(action.milliseconds)
-                true
-            }
-            is ActionDecision.TaskCompleted -> {
-                true
-            }
-            is ActionDecision.Error -> {
-                handleError(action.message)
-                false
-            }
+            is ActionDecision.Scroll -> hands.scroll(action.direction)
+            is ActionDecision.Wait -> { delay(action.milliseconds); true }
+            is ActionDecision.TaskCompleted -> true
+            is ActionDecision.Error -> { handleError(action.message); false }
         }
     }
-    
-    /**
-     * معالجة الأخطاء
-     */
+
     private suspend fun handleError(errorMessage: String) {
         memory.updateTaskStatus(TaskStatus.FAILED)
         isAgentActive = false
-        
-        // إرسال إشعار بالخطأ
-        val intent = Intent("com.example.manusagentapp.ERROR")
-        intent.putExtra("error_message", errorMessage)
+        notifyUi("ERROR", "error_message" to errorMessage)
+    }
+
+    private fun notifyUi(action: String, vararg extras: Pair<String, Any?>) {
+        val intent = Intent("com.example.manusagentapp.$action")
+        extras.forEach { (key, value) ->
+            when (value) {
+                is String -> intent.putExtra(key, value)
+                is Boolean -> intent.putExtra(key, value)
+                is Int -> intent.putExtra(key, value)
+                is Long -> intent.putExtra(key, value)
+                is Float -> intent.putExtra(key, value)
+            }
+        }
         sendBroadcast(intent)
     }
-    
-    /**
-     * إشعار اكتمال المهمة
-     */
-    private fun notifyTaskCompleted() {
-        val intent = Intent("com.example.manusagentapp.TASK_COMPLETED")
-        val stats = memory.getPerformanceStats()
-        intent.putExtra("success_rate", stats.successRate)
-        intent.putExtra("duration", stats.duration)
-        sendBroadcast(intent)
-    }
-    
-    /**
-     * الحصول على حالة الوكيل
-     */
-    fun getAgentStatus(): AgentStatus {
-        return AgentStatus(
-            isActive = isAgentActive,
-            currentTask = currentTask,
-            performanceStats = memory.getPerformanceStats()
-        )
-    }
-    
+
     override fun onDestroy() {
         super.onDestroy()
+        unregisterReceiver(commandReceiver)
         serviceScope.cancel()
     }
 }
-
-/**
- * حالة الوكيل
- */
-data class AgentStatus(
-    val isActive: Boolean,
-    val currentTask: Task?,
-    val performanceStats: PerformanceStats
-)
-
