@@ -8,6 +8,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
+import kotlinx.serialization.modules.subclass
 
 /**
  * الذاكرة (The Memory) - مدير المهام والحالة
@@ -17,18 +20,18 @@ class Memory(private val context: Context) {
     private val sharedPreferences: SharedPreferences = 
         context.getSharedPreferences("manus_agent_memory", Context.MODE_PRIVATE)
     
+    // --- هذا هو الجزء الذي تم تصحيحه بالكامل ---
     private val json = Json { 
         ignoreUnknownKeys = true
         encodeDefaults = true
-        // هذا السطر مهم للتعامل مع الكلاسات المتعددة
-        serializersModule = kotlinx.serialization.modules.SerializersModule {
+        serializersModule = SerializersModule {
             polymorphic(ActionDecision::class) {
-                subclass(ActionDecision.TaskCompleted::class, ActionDecision.TaskCompleted.serializer())
-                subclass(ActionDecision.Click::class, ActionDecision.Click.serializer())
-                subclass(ActionDecision.Type::class, ActionDecision.Type.serializer())
-                subclass(ActionDecision.Scroll::class, ActionDecision.Scroll.serializer())
-                subclass(ActionDecision.Wait::class, ActionDecision.Wait.serializer())
-                subclass(ActionDecision.Error::class, ActionDecision.Error.serializer())
+                subclass(ActionDecision.TaskCompleted::class)
+                subclass(ActionDecision.Click::class)
+                subclass(ActionDecision.Type::class)
+                subclass(ActionDecision.Scroll::class)
+                subclass(ActionDecision.Wait::class)
+                subclass(ActionDecision.Error::class)
             }
         }
     }
