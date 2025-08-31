@@ -40,7 +40,8 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        // --- هذا هو السطر الذي تم تصحيحه ---
+        kotlinCompilerExtensionVersion = "1.5.10" 
     }
     packaging {
         resources {
@@ -52,7 +53,7 @@ android {
 dependencies {
 
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.18.0") // <-- المكتبة الجديدة هنا
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.18.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.1")
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation(platform("androidx.compose:compose-bom:2024.05.00"))
