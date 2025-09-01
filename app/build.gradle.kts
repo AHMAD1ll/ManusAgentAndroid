@@ -1,3 +1,9 @@
+// --- FIX: Add the required imports at the top ---
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+// --- END OF FIX ---
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -10,7 +16,8 @@ fun generateVersionCode(): Int {
 
 // Function to generate a user-friendly version name
 fun generateVersionName(): String {
-    val date = java.text.SimpleDateFormat("yyyy.MM.dd.HHmm", java.util.Locale.getDefault()).format(java.util.Date())
+    // Now this line will work because SimpleDateFormat, Date, and Locale are imported
+    val date = SimpleDateFormat("yyyy.MM.dd.HHmm", Locale.getDefault()).format(Date())
     return "1.0.$date"
 }
 
@@ -24,11 +31,9 @@ android {
         minSdk = 24
         targetSdk = 34
         
-        // --- THE FIX IS HERE ---
         // Automatically set a new, unique version code and name for every build
         versionCode = generateVersionCode()
         versionName = generateVersionName()
-        // --- END OF FIX ---
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
