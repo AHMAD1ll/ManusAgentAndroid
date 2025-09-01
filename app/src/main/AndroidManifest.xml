@@ -14,6 +14,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ManusAgentApp"
+        android:requestLegacyExternalStorage="true"
         tools:targetApi="31">
         <activity
             android:name=".MainActivity"
@@ -22,11 +23,9 @@
             android:theme="@style/Theme.ManusAgentApp">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <service
             android:name=".service.ManusAccessibilityService"
             android:exported="false"
@@ -39,7 +38,5 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
-
     </application>
-
 </manifest>
