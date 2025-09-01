@@ -1,9 +1,19 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    // --- هذا هو الإضافة الجديدة والمهمة ---
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.20"
 }
+
+// Function to generate a unique version code based on the current time
+fun generateVersionCode(): Int {
+    return (System.currentTimeMillis() / 1000).toInt()
+}
+
+// Function to generate a user-friendly version name
+fun generateVersionName(): String {
+    val date = java.text.SimpleDateFormat("yyyy.MM.dd.HHmm", java.util.Locale.getDefault()).format(java.util.Date())
+    return "1.0.$date"
+}
+
 
 android {
     namespace = "com.example.manusagentapp"
@@ -11,10 +21,14 @@ android {
 
     defaultConfig {
         applicationId = "com.example.manusagentapp"
-        minSdk = 28
+        minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        
+        // --- THE FIX IS HERE ---
+        // Automatically set a new, unique version code and name for every build
+        versionCode = generateVersionCode()
+        versionName = generateVersionName()
+        // --- END OF FIX ---
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -42,7 +56,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.4"
+        kotlinCompilerExtensionVersion = "1.5.1"
     }
     packaging {
         resources {
@@ -52,17 +66,7 @@ android {
 }
 
 dependencies {
-
-    // --- هذه هي المكتبة الجديدة والمهمة ---
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-
-    // --- مكتبات Ktor للشبكة والتحميل ---
-    implementation("io.ktor:ktor-client-android:2.3.11")
-    implementation("io.ktor:ktor-client-content-negotiation:2.3.11")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11")
-
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.18.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.1")
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation(platform("androidx.compose:compose-bom:2024.05.00"))
