@@ -4,7 +4,7 @@
 package com.example.manusagentapp
 
 import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.AccessibilityNodeInfo // *** تمت الإضافة ***
+import android.accessibilityservice.AccessibilityNodeInfo // *** هذا هو السطر الذي كان ناقصًا ***
 import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
