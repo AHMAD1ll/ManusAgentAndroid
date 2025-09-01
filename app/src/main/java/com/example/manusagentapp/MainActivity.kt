@@ -2,7 +2,6 @@ package com.example.manusagentapp
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -20,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.manusagentapp.ui.theme.ManusAgentAppTheme
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -48,16 +48,17 @@ fun MainScreen() {
     var copyStatus by remember { mutableStateOf("التحقق من الملفات...") }
     var filesExist by remember { mutableStateOf(false) }
     val isAccessibilityServiceEnabled by isAccessibilityServiceEnabledAsState()
+    val coroutineScope = rememberCoroutineScope() // نحصل على CoroutineScope هنا
 
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
             // Permission granted, now copy files
-            CoroutineScope(Dispatchers.IO).launch {
+            coroutineScope.launch(Dispatchers.IO) { // نستخدم الـ scope هنا
                 copyModelFiles(context) { status ->
                     copyStatus = status
-                    if (status.contains("مكتملة")) {
+                    if (status.contains("اكتملت")) { // تصحيح بسيط للشرط
                         filesExist = true
                     }
                 }
@@ -77,6 +78,7 @@ fun MainScreen() {
             filesExist = true
             copyStatus = "التهيئة مكتملة. الملفات موجودة بالفعل."
         } else {
+            // نطلب الإذن هنا
             requestPermissionLauncher.launch(android.Manifest.permission.READ_EXTERNAL_STORAGE)
         }
     }
