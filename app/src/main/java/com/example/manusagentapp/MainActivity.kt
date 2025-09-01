@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.example.manusagentapp.ui.theme.ManusAgentAppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -76,8 +77,11 @@ fun MainScreen() {
             }
         }
         val filter = IntentFilter(ManusAccessibilityService.ACTION_SERVICE_STATE_CHANGED)
-        context.registerReceiver(receiver, filter)
         
+        // **الإصلاح الرئيسي هنا**
+        // تسجيل المستقبل بشكل آمن ومتوافق مع كل الإصدارات
+        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+
         // Initial check
         if (isAccessibilityServiceEnabled(context)) {
              serviceStatus = "الخدمة نشطة"
