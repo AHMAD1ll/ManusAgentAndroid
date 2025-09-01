@@ -1,3 +1,6 @@
+// المسار: app/src/main/java/com/example/manusagentapp/ManusAccessibilityService.kt
+// (استبدل محتوى الملف بالكامل)
+
 package com.example.manusagentapp
 
 import android.accessibilityservice.AccessibilityService
@@ -41,17 +44,17 @@ class ManusAccessibilityService : AccessibilityService() {
         scope.launch {
             try {
                 ortEnv = OrtEnvironment.getEnvironment()
-                broadcastState(STATE_MODEL_LOAD_SUCCESS, "ORT Environment created successfully.")
-                
-                val modelPath = File(filesDir, "phi3.onnx.data").absolutePath
+
+                // *** الإصلاح الرئيسي هنا: الإشارة إلى ملف .onnx وليس .data ***
+                val modelPath = File(filesDir, "phi3.onnx").absolutePath
                 val options = OrtSession.SessionOptions()
                 ortSession = ortEnv?.createSession(modelPath, options)
-                
-                // If we reach here, model is loaded.
-                // We will add more logic later.
+
+                // إذا وصلنا إلى هنا، تم تحميل النموذج بنجاح
+                broadcastState(STATE_MODEL_LOAD_SUCCESS, "تم تحميل نموذج الذكاء الاصطناعي بنجاح!")
 
             } catch (e: Exception) {
-                val errorMessage = "Error loading AI Model: ${e.message}"
+                val errorMessage = "فشل تحميل النموذج: ${e.message}"
                 Log.e("ManusService", errorMessage, e)
                 broadcastState(STATE_MODEL_LOAD_FAIL, errorMessage)
             }
@@ -59,18 +62,18 @@ class ManusAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // We will add logic here later
+        // سنضيف المنطق هنا لاحقًا
     }
 
     override fun onInterrupt() {
-        // Not used
+        // لا يستخدم حاليا
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
         broadcastState(STATE_DISCONNECTED)
         Toast.makeText(this, "Manus Agent Service: DISCONNECTED", Toast.LENGTH_SHORT).show()
         ortSession?.close()
-        ortEnv?.close()
+        // ortEnv?.close() // لا تغلق البيئة العامة إلا عند إنهاء التطبيق تمامًا
         job.cancel()
         return super.onUnbind(intent)
     }
@@ -80,6 +83,7 @@ class ManusAccessibilityService : AccessibilityService() {
             putExtra(EXTRA_STATE, state)
             message?.let { putExtra("EXTRA_MESSAGE", it) }
         }
+        // استخدام sendBroadcast لضمان وصول الرسالة
         sendBroadcast(intent)
     }
 }
