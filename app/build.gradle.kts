@@ -1,26 +1,20 @@
-// --- FIX: Add the required imports at the top ---
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-// --- END OF FIX ---
 
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
 
-// Function to generate a unique version code based on the current time
 fun generateVersionCode(): Int {
     return (System.currentTimeMillis() / 1000).toInt()
 }
 
-// Function to generate a user-friendly version name
 fun generateVersionName(): String {
-    // Now this line will work because SimpleDateFormat, Date, and Locale are imported
     val date = SimpleDateFormat("yyyy.MM.dd.HHmm", Locale.getDefault()).format(Date())
     return "1.0.$date"
 }
-
 
 android {
     namespace = "com.example.manusagentapp"
@@ -30,11 +24,8 @@ android {
         applicationId = "com.example.manusagentapp"
         minSdk = 24
         targetSdk = 34
-        
-        // Automatically set a new, unique version code and name for every build
         versionCode = generateVersionCode()
         versionName = generateVersionName()
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -61,7 +52,10 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        // --- THE FIX IS HERE ---
+        // Updated the version to match Kotlin 1.9.20
+        kotlinCompilerExtensionVersion = "1.5.3" 
+        // --- END OF FIX ---
     }
     packaging {
         resources {
