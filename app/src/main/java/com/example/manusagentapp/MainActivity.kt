@@ -1,3 +1,6 @@
+// المسار: app/src/main/java/com/example/manusagentapp/MainActivity.kt
+// (استبدل محتوى الملف بالكامل)
+
 package com.example.manusagentapp
 
 import android.content.BroadcastReceiver
@@ -50,57 +53,47 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     val context = LocalContext.current
-    var copyStatus by remember { mutableStateOf("التحقق من الأذونات...") }
-    var filesExist by remember { mutableStateOf(false) }
-    var serviceStatus by remember { mutableStateOf("الخدمة متوقفة") }
-    var serviceStatusColor by remember { mutableStateOf(Color.Red) }
+    var serviceEnabled by remember { mutableStateOf(false) }
 
-    // BroadcastReceiver to listen for service state changes
+    // التحقق الأولي وتحديث حالة الخدمة
     DisposableEffect(context) {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                when (intent?.getStringExtra(ManusAccessibilityService.EXTRA_STATE)) {
-                    ManusAccessibilityService.STATE_CONNECTED -> {
-                        serviceStatus = "الخدمة نشطة"
-                        serviceStatusColor = Color.Green
-                    }
-                    ManusAccessibilityService.STATE_DISCONNECTED -> {
-                        serviceStatus = "الخدمة متوقفة"
-                        serviceStatusColor = Color.Red
-                    }
-                    ManusAccessibilityService.STATE_MODEL_LOAD_FAIL -> {
-                        val message = intent.getStringExtra("EXTRA_MESSAGE") ?: "فشل تحميل النموذج"
-                        serviceStatus = message
-                        serviceStatusColor = Color.Yellow
-                    }
+                serviceEnabled = when (intent?.getStringExtra(ManusAccessibilityService.EXTRA_STATE)) {
+                    ManusAccessibilityService.STATE_CONNECTED,
+                    ManusAccessibilityService.STATE_MODEL_LOAD_SUCCESS -> true
+                    else -> false
                 }
             }
         }
         val filter = IntentFilter(ManusAccessibilityService.ACTION_SERVICE_STATE_CHANGED)
-        
-        // **الإصلاح الرئيسي هنا**
-        // تسجيل المستقبل بشكل آمن ومتوافق مع كل الإصدارات
         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
 
-        // Initial check
-        if (isAccessibilityServiceEnabled(context)) {
-             serviceStatus = "الخدمة نشطة"
-             serviceStatusColor = Color.Green
-        } else {
-             serviceStatus = "الخدمة متوقفة"
-             serviceStatusColor = Color.Red
-        }
+        // التحقق من الحالة عند بدء التشغيل
+        serviceEnabled = isAccessibilityServiceEnabled(context)
 
         onDispose {
             context.unregisterReceiver(receiver)
         }
     }
 
+    // *** الإصلاح الرئيسي هنا: التبديل بين الواجهات ***
+    if (serviceEnabled) {
+        AgentControlScreen()
+    } else {
+        InitialSetupScreen()
+    }
+}
+
+@Composable
+fun InitialSetupScreen() {
+    val context = LocalContext.current
+    var setupStatus by remember { mutableStateOf("التحقق من الأذونات...") }
 
     val requestAllFilesAccessLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) {
-        // Handled by LaunchedEffect
+        // يتم التعامل مع النتيجة في LaunchedEffect
     }
 
     LaunchedEffect(Unit) {
@@ -110,18 +103,14 @@ fun MainScreen() {
                 .all { File(modelsDir, it).exists() }
 
             if (allFilesPresent) {
-                filesExist = true
-                copyStatus = "اكتملت عملية النسخ بنجاح!"
+                setupStatus = "الملفات جاهزة. يرجى تفعيل الخدمة."
             } else {
                 copyModelFiles(context) { status ->
-                    copyStatus = status
-                    if (status.contains("اكتملت")) {
-                        filesExist = true
-                    }
+                    setupStatus = status
                 }
             }
         } else {
-            copyStatus = "نحتاج إذن الوصول لكل الملفات لنسخ نماذج الذكاء الاصطناعي."
+            setupStatus = "نحتاج إذن الوصول لكل الملفات لنسخ نماذج الذكاء الاصطناعي."
             val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
             intent.data = Uri.parse("package:${context.packageName}")
             requestAllFilesAccessLauncher.launch(intent)
@@ -129,35 +118,85 @@ fun MainScreen() {
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("Manus Agent Setup", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Text(setupStatus, fontSize = 16.sp)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = {
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            context.startActivity(intent)
+        }) {
+            Text("تفعيل خدمة الوصولية")
+        }
+    }
+}
+
+@Composable
+fun AgentControlScreen() {
+    var command by remember { mutableStateOf("") }
+    var agentStatus by remember { mutableStateOf("جاهز لاستقبال الأوامر") }
+    var serviceStatusColor by remember { mutableStateOf(Color.Green) }
+
+    // يمكننا إضافة BroadcastReceiver هنا للاستماع لحالة النموذج
+     DisposableEffect(Unit) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.getStringExtra(ManusAccessibilityService.EXTRA_STATE)) {
+                    ManusAccessibilityService.STATE_MODEL_LOAD_SUCCESS -> {
+                        agentStatus = intent.getStringExtra("EXTRA_MESSAGE") ?: "النموذج جاهز"
+                        serviceStatusColor = Color.Green
+                    }
+                    ManusAccessibilityService.STATE_MODEL_LOAD_FAIL -> {
+                        agentStatus = intent.getStringExtra("EXTRA_MESSAGE") ?: "فشل تحميل النموذج"
+                        serviceStatusColor = Color.Red
+                    }
+                }
+            }
+        }
+        val filter = IntentFilter(ManusAccessibilityService.ACTION_SERVICE_STATE_CHANGED)
+        ContextCompat.registerReceiver(LocalContext.current, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+        onDispose { LocalContext.current.unregisterReceiver(receiver) }
+    }
+
+
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text("Manus Agent", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Text(copyStatus, fontSize = 16.sp)
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (filesExist) {
-            Text(
-                text = serviceStatus,
-                color = serviceStatusColor,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = {
-                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                context.startActivity(intent)
-            }) {
-                Text("تفعيل خدمة الوصولية")
-            }
+        Text(
+            text = agentStatus,
+            color = serviceStatusColor,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp
+        )
+        Spacer(modifier = Modifier.height(32.dp))
+
+        OutlinedTextField(
+            value = command,
+            onValueChange = { command = it },
+            label = { Text("أدخل الأمر هنا") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = { /* TODO: إرسال الأمر إلى الخدمة */ }) {
+            Text("بدء المهمة")
         }
     }
 }
+
+
+// --- الدوال المساعدة (تبقى كما هي) ---
 
 private fun hasAllFilesAccess(): Boolean {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
