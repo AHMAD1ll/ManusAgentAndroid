@@ -1,10 +1,10 @@
-// المسار: app/src/main/java/com/example/manusagentapp/service/ManusAccessibilityService.kt
+// المسار: app/src/main/java/com/example/manusagentapp/ManusAccessibilityService.kt
 // (استبدل محتوى الملف بالكامل)
 
-package com.example.manusagentapp.service
+package com.example.manusagentapp // *** الإصلاح: تم حذف .service من هنا ***
 
 import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.AccessibilityNodeInfo // *** تأكد من وجود هذا السطر ***
+import android.accessibilityservice.AccessibilityNodeInfo
 import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
