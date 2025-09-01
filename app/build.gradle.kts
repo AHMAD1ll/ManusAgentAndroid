@@ -1,8 +1,3 @@
-import java.io.FileInputStream
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.Properties
 import java.util.Base64
 
 plugins {
@@ -10,14 +5,16 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// ... (كل الدوال مثل generateVersionCode لا تتغير) ...
 fun generateVersionCode(): Int {
     return (System.currentTimeMillis() / 1000).toInt()
 }
 
 fun generateVersionName(): String {
-    val date = SimpleDateFormat("yyyy.MM.dd.HHmm", Locale.getDefault()).format(Date())
+    val date = java.text.SimpleDateFormat("yyyy.MM.dd.HHmm", java.util.Locale.getDefault()).format(java.util.Date())
     return "1.0.$date"
 }
+
 
 android {
     namespace = "com.example.manusagentapp"
@@ -77,7 +74,8 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.4"
+        // الإصلاح: تحديث إصدار Compose Compiler ليتوافق مع Kotlin 1.9.23
+        kotlinCompilerExtensionVersion = "1.5.13" 
     }
     packaging {
         resources {
@@ -87,23 +85,27 @@ android {
 }
 
 dependencies {
-    // *** التعديلات هنا لضمان التوافق وحل المشكلة ***
-    implementation("androidx.core:core-ktx:1.13.1") // التأكد من وجود هذه التبعية الأساسية
-    implementation("androidx.appcompat:appcompat:1.7.0") // إضافة تبعية مهمة للتوافق
+    // استخدام أحدث الإصدارات المتوافقة
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.appcompat:appcompat:1.7.0")
     
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.18.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.1")
     implementation("androidx.activity:activity-compose:1.9.0")
-    implementation(platform("androidx.compose:compose-bom:2024.05.00"))
+    
+    // الإصلاح: استخدام أحدث إصدار مستقر من Compose BOM
+    implementation(platform("androidx.compose:compose-bom:2024.06.00")) 
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.05.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.06.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
