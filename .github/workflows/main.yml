@@ -21,7 +21,7 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # 3. تثبيت إصدار Gradle الصحيح والمحدد (هذا هو الحل المطلق)
+    # 3. تثبيت إصدار Gradle الصحيح والمحدد
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
@@ -29,6 +29,11 @@ jobs:
 
     # 4. بناء التطبيق باستخدام الأمر gradle مباشرة (وليس gradlew)
     - name: Build with Gradle
+      # **الإصلاح هنا: تمرير الأسرار إلى عملية البناء**
+      env:
+        MY_SIGNING_KEY_BASE64: ${{ secrets.MY_SIGNING_KEY_BASE64 }}
+        MY_SIGNING_KEY_ALIAS: ${{ secrets.MY_SIGNING_KEY_ALIAS }}
+        MY_SIGNING_KEY_PASSWORD: ${{ secrets.MY_SIGNING_KEY_PASSWORD }}
       run: gradle assembleDebug
 
     # 5. رفع ملف APK
