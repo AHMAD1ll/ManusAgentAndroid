@@ -1,17 +1,16 @@
 // المسار: app/src/main/java/com/example/manusagentapp/service/ManusAccessibilityService.kt
 // (استبدل محتوى الملف بالكامل)
 
-package com.example.manusagentapp.service // *** الإصلاح الرئيسي هنا: تعديل اسم الحزمة ***
+package com.example.manusagentapp.service
 
 import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.AccessibilityNodeInfo
+import android.accessibilityservice.AccessibilityNodeInfo // *** الإصلاح الحاسم هنا ***
 import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
-import com.example.manusagentapp.ManusAccessibilityService // *** تمت الإضافة لتجنب أخطاء مستقبلية ***
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
