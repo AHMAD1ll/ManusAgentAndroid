@@ -27,7 +27,7 @@
         </activity>
 
         <service
-            android:name=".service.ManusAccessibilityService" <!-- *** الإصلاح الوحيد والمهم هنا *** -->
+            android:name=".service.ManusAccessibilityService"
             android:exported="false"
             android:label="@string/accessibility_service_label"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
@@ -40,4 +40,5 @@
         </service>
 
     </application>
+
 </manifest>
