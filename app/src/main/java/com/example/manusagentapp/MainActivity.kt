@@ -27,15 +27,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.example.manusagentapp.service.ManusAccessibilityService // *** الإصلاح الحاسم هنا ***
 import com.example.manusagentapp.ui.theme.ManusAgentAppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
-
-// *** تم نقل الملفات المساعدة إلى هنا لتكون في المستوى الأعلى ***
-// (باقي الملف كما هو في الإصدار السابق الصحيح)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,9 +68,7 @@ fun MainScreen() {
         }
         val filter = IntentFilter(ManusAccessibilityService.ACTION_SERVICE_STATE_CHANGED)
         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
-
         serviceEnabled = isAccessibilityServiceEnabled(context)
-
         onDispose {
             context.unregisterReceiver(receiver)
         }
@@ -89,7 +85,6 @@ fun MainScreen() {
 fun InitialSetupScreen() {
     val context = LocalContext.current
     var setupStatus by remember { mutableStateOf("التحقق من الأذونات...") }
-
     val requestAllFilesAccessLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { /* Handled by LaunchedEffect */ }
@@ -99,13 +94,10 @@ fun InitialSetupScreen() {
             val modelsDir = context.filesDir
             val allFilesPresent = listOf("phi3.onnx", "phi3.onnx.data", "tokenizer.json")
                 .all { File(modelsDir, it).exists() }
-
             if (allFilesPresent) {
                 setupStatus = "الملفات جاهزة. يرجى تفعيل الخدمة."
             } else {
-                copyModelFiles(context) { status ->
-                    setupStatus = status
-                }
+                copyModelFiles(context) { status -> setupStatus = status }
             }
         } else {
             setupStatus = "نحتاج إذن الوصول لكل الملفات لنسخ نماذج الذكاء الاصطناعي."
@@ -167,12 +159,7 @@ fun AgentControlScreen() {
     ) {
         Text("Manus Agent", fontSize = 32.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = agentStatus,
-            color = serviceStatusColor,
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp
-        )
+        Text(text = agentStatus, color = serviceStatusColor, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         Spacer(modifier = Modifier.height(32.dp))
         OutlinedTextField(
             value = command,
@@ -211,7 +198,6 @@ suspend fun copyModelFiles(context: Context, onStatusUpdate: (String) -> Unit) {
         val downloadDir = File("/storage/emulated/0/Download")
         val modelsDir = context.filesDir
         val filesToCopy = listOf("phi3.onnx", "phi3.onnx.data", "tokenizer.json")
-
         try {
             filesToCopy.forEachIndexed { index, fileName ->
                 val sourceFile = File(downloadDir, fileName)
@@ -222,9 +208,7 @@ suspend fun copyModelFiles(context: Context, onStatusUpdate: (String) -> Unit) {
                 }
                 onStatusUpdate("جاري نسخ الملف ${index + 1}/${filesToCopy.size}: $fileName...")
                 sourceFile.inputStream().use { input ->
-                    FileOutputStream(destFile).use { output ->
-                        input.copyTo(output)
-                    }
+                    FileOutputStream(destFile).use { output -> input.copyTo(output) }
                 }
             }
             onStatusUpdate("اكتملت عملية النسخ بنجاح!")
@@ -236,9 +220,6 @@ suspend fun copyModelFiles(context: Context, onStatusUpdate: (String) -> Unit) {
 
 private fun isAccessibilityServiceEnabled(context: Context): Boolean {
     val serviceId = "${context.packageName}/${ManusAccessibilityService::class.java.canonicalName}"
-    val settingValue = Settings.Secure.getString(
-        context.contentResolver,
-        Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-    )
+    val settingValue = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
     return settingValue?.contains(serviceId) ?: false
 }
