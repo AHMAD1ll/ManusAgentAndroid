@@ -4,7 +4,7 @@
 package com.example.manusagentapp.service
 
 import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.AccessibilityNodeInfo // *** الإصلاح الحاسم هنا ***
+import android.accessibilityservice.AccessibilityNodeInfo // *** هذا هو السطر الحاسم الذي يحل المشكلة ***
 import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
