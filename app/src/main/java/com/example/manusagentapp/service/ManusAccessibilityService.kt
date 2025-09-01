@@ -1,167 +1,50 @@
 package com.example.manusagentapp.service
 
 import android.accessibilityservice.AccessibilityService
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.os.Build
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
-import com.example.manusagentapp.core.*
-import kotlinx.coroutines.*
 
 class ManusAccessibilityService : AccessibilityService() {
 
-    private lateinit var brain: Brain
-    private lateinit var eyes: Eyes
-    private lateinit var hands: Hands
-    private lateinit var memory: Memory
+    private val TAG = "ManusAccessibilityService"
 
-    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-    private var isAgentActive = false
-    private var currentTask: Task? = null
-
-    // --- هذا هو الجزء الجديد والمهم ---
-    private val commandReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            when (intent?.action) {
-                "com.example.manusagentapp.START_TASK" -> {
-                    val command = intent.getStringExtra("user_command")
-                    if (!command.isNullOrBlank()) {
-                        startTask(command)
-                    }
-                }
-                "com.example.manusagentapp.STOP_TASK" -> {
-                    stopTask()
-                }
-            }
-        }
-    }
-    // --- نهاية الجزء الجديد ---
-
+    /**
+     * This function is called by the system when the service is first connected (i.e., when the user enables it).
+     * It's the perfect place to do one-time setup.
+     */
     override fun onServiceConnected() {
         super.onServiceConnected()
-
-        brain = Brain(this)
-        eyes = Eyes(this)
-        hands = Hands(this)
-        memory = Memory(this)
-
-        serviceScope.launch {
-            brain.initialize()
-        }
-
-        // --- هذا هو الجزء الجديد والمهم ---
-        val intentFilter = IntentFilter().apply {
-            addAction("com.example.manusagentapp.START_TASK")
-            addAction("com.example.manusagentapp.STOP_TASK")
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(commandReceiver, intentFilter, RECEIVER_NOT_EXPORTED)
-        } else {
-            registerReceiver(commandReceiver, intentFilter)
-        }
-        // --- نهاية الجزء الجديد ---
+        Log.d(TAG, "==============================================")
+        Log.d(TAG, "Manus Agent Service CONNECTED and ready!")
+        Log.d(TAG, "Next step: Initialize the AI model here.")
+        Log.d(TAG, "==============================================")
     }
 
+    /**
+     * This function is called every time an event happens on the screen
+     * (e.g., a button is clicked, a window changes, text is typed, etc.).
+     * This is where we will eventually listen for user commands.
+     */
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // لا تفعل شيئًا هنا حاليًا، الحلقة ستُدار يدويًا
+        // We will add logic here later. For now, we just log the event type.
+        // Log.d(TAG, "Accessibility Event Received: ${event?.eventType}")
     }
 
+    /**
+     * This function is called when the system wants to interrupt the feedback
+     * your service is providing, usually in response to a user action like moving focus.
+     */
     override fun onInterrupt() {
-        isAgentActive = false
+        Log.d(TAG, "Service interrupted.")
     }
 
-    private fun startTask(userCommand: String) {
-        if (isAgentActive) return // منع بدء مهمة جديدة إذا كانت هناك واحدة قيد التشغيل
-
-        serviceScope.launch {
-            try {
-                isAgentActive = true
-                val taskPlan = brain.analyzeUserGoal(userCommand)
-                currentTask = memory.startNewTask(userCommand, taskPlan)
-                runAgentLoop()
-            } catch (e: Exception) {
-                handleError("Error starting task: ${e.message}")
-            }
-        }
-    }
-
-    private fun stopTask() {
-        isAgentActive = false
-        currentTask = null
-        serviceScope.launch {
-            memory.clearMemory() // مسح الذاكرة عند إيقاف المهمة
-        }
-    }
-
-    private suspend fun runAgentLoop() {
-        if (!isAgentActive || currentTask == null) return
-
-        try {
-            delay(1000) // انتظار قصير قبل كل إجراء
-            val screenContext = eyes.analyzeCurrentScreen()
-            val actionDecision = brain.decideNextAction(screenContext, currentTask!!.taskPlan)
-            val success = executeAction(actionDecision)
-            memory.recordExecutionStep(actionDecision, screenContext, success)
-
-            if (actionDecision is ActionDecision.TaskCompleted || !success) {
-                memory.updateTaskStatus(if (success) TaskStatus.COMPLETED else TaskStatus.FAILED)
-                isAgentActive = false
-                notifyUi("TASK_COMPLETED")
-            } else {
-                memory.advanceToNextStep()
-                if (isAgentActive) {
-                    runAgentLoop() // استدعاء الحلقة مرة أخرى
-                }
-            }
-        } catch (e: Exception) {
-            handleError("Error in agent loop: ${e.message}")
-        }
-    }
-
-    private suspend fun executeAction(action: ActionDecision): Boolean {
-        return when (action) {
-            is ActionDecision.Click -> hands.clickBounds(action.bounds)
-            is ActionDecision.Type -> {
-                // البحث عن العقدة الصحيحة قبل الكتابة
-                val node = eyes.analyzeCurrentScreen().elements.find { it.bounds == action.bounds && it.isEditable }
-                if (node != null) {
-                    hands.typeText(node, action.text)
-                } else {
-                    false
-                }
-            }
-            is ActionDecision.Scroll -> hands.scroll(action.direction)
-            is ActionDecision.Wait -> { delay(action.milliseconds); true }
-            is ActionDecision.TaskCompleted -> true
-            is ActionDecision.Error -> { handleError(action.message); false }
-        }
-    }
-
-    private suspend fun handleError(errorMessage: String) {
-        memory.updateTaskStatus(TaskStatus.FAILED)
-        isAgentActive = false
-        notifyUi("ERROR", "error_message" to errorMessage)
-    }
-
-    private fun notifyUi(action: String, vararg extras: Pair<String, Any?>) {
-        val intent = Intent("com.example.manusagentapp.$action")
-        extras.forEach { (key, value) ->
-            when (value) {
-                is String -> intent.putExtra(key, value)
-                is Boolean -> intent.putExtra(key, value)
-                is Int -> intent.putExtra(key, value)
-                is Long -> intent.putExtra(key, value)
-                is Float -> intent.putExtra(key, value)
-            }
-        }
-        sendBroadcast(intent)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        unregisterReceiver(commandReceiver)
-        serviceScope.cancel()
+    /**
+     * This function is called by the system when the service is disconnected (i.e., when the user disables it).
+     */
+    override fun onUnbind(intent: android.content.Intent?): Boolean {
+        Log.d(TAG, "==============================================")
+        Log.d(TAG, "Manus Agent Service DISCONNECTED.")
+        Log.d(TAG, "==============================================")
+        return super.onUnbind(intent)
     }
 }
