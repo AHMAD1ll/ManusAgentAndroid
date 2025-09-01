@@ -26,15 +26,15 @@ jobs:
       uses: gradle/actions/setup-gradle@v3
       with:
         gradle-version: '8.3'
-        cache-disabled: true  # *** هذا هو التعديل الوحيد المطلوب ***
+        cache-disabled: true
 
-    # 4. بناء التطبيق باستخدام الأمر gradle مباشرة (وليس gradlew)
+    # 4. بناء التطبيق مع التنظيف
     - name: Build with Gradle
       env:
         MY_SIGNING_KEY_BASE64: ${{ secrets.MY_SIGNING_KEY_BASE64 }}
         MY_SIGNING_KEY_ALIAS: ${{ secrets.MY_SIGNING_KEY_ALIAS }}
         MY_SIGNING_KEY_PASSWORD: ${{ secrets.MY_SIGNING_KEY_PASSWORD }}
-      run: gradle assembleDebug
+      run: gradle clean assembleDebug # *** هذا هو التعديل الوحيد والمهم ***
 
     # 5. رفع ملف APK
     - name: Upload APK
