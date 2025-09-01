@@ -26,10 +26,10 @@ jobs:
       uses: gradle/actions/setup-gradle@v3
       with:
         gradle-version: '8.3'
+        cache-disabled: true  # *** هذا هو التعديل الوحيد المطلوب ***
 
     # 4. بناء التطبيق باستخدام الأمر gradle مباشرة (وليس gradlew)
     - name: Build with Gradle
-      # **الإصلاح هنا: تمرير الأسرار إلى عملية البناء**
       env:
         MY_SIGNING_KEY_BASE64: ${{ secrets.MY_SIGNING_KEY_BASE64 }}
         MY_SIGNING_KEY_ALIAS: ${{ secrets.MY_SIGNING_KEY_ALIAS }}
