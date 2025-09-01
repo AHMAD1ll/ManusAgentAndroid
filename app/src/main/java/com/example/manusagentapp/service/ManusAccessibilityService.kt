@@ -3,48 +3,43 @@ package com.example.manusagentapp.service
 import android.accessibilityservice.AccessibilityService
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import android.widget.Toast // <<< IMPORT ADDED
 
 class ManusAccessibilityService : AccessibilityService() {
 
     private val TAG = "ManusAccessibilityService"
 
     /**
-     * This function is called by the system when the service is first connected (i.e., when the user enables it).
-     * It's the perfect place to do one-time setup.
+     * This function is called by the system when the service is first connected.
+     * We will show a Toast message to confirm it's running.
      */
     override fun onServiceConnected() {
         super.onServiceConnected()
-        Log.d(TAG, "==============================================")
         Log.d(TAG, "Manus Agent Service CONNECTED and ready!")
-        Log.d(TAG, "Next step: Initialize the AI model here.")
-        Log.d(TAG, "==============================================")
+
+        // Show a confirmation message on the screen
+        Toast.makeText(this, "Manus Agent Service: CONNECTED", Toast.LENGTH_SHORT).show()
     }
 
-    /**
-     * This function is called every time an event happens on the screen
-     * (e.g., a button is clicked, a window changes, text is typed, etc.).
-     * This is where we will eventually listen for user commands.
-     */
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // We will add logic here later. For now, we just log the event type.
-        // Log.d(TAG, "Accessibility Event Received: ${event?.eventType}")
+        // We will add logic here later.
     }
 
-    /**
-     * This function is called when the system wants to interrupt the feedback
-     * your service is providing, usually in response to a user action like moving focus.
-     */
     override fun onInterrupt() {
         Log.d(TAG, "Service interrupted.")
+        Toast.makeText(this, "Manus Agent Service: Interrupted", Toast.LENGTH_SHORT).show()
     }
 
     /**
-     * This function is called by the system when the service is disconnected (i.e., when the user disables it).
+     * This function is called by the system when the service is disconnected.
+     * We will show a Toast message to confirm it has stopped.
      */
     override fun onUnbind(intent: android.content.Intent?): Boolean {
-        Log.d(TAG, "==============================================")
         Log.d(TAG, "Manus Agent Service DISCONNECTED.")
-        Log.d(TAG, "==============================================")
+        
+        // Show a confirmation message on the screen
+        Toast.makeText(this, "Manus Agent Service: DISCONNECTED", Toast.LENGTH_SHORT).show()
+        
         return super.onUnbind(intent)
     }
 }
