@@ -1,13 +1,14 @@
 package com.example.manusagentapp
 
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
-import android.view.accessibility.AccessibilityManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -19,12 +20,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import com.example.manusagentapp.ui.theme.ManusAgentAppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -53,16 +51,52 @@ fun MainScreen() {
     val context = LocalContext.current
     var copyStatus by remember { mutableStateOf("التحقق من الأذونات...") }
     var filesExist by remember { mutableStateOf(false) }
-    
-    // تم تعديل هذه الدالة بالكامل
-    val isAccessibilityServiceEnabled by rememberUpdatedAccessibilityState()
+    var serviceStatus by remember { mutableStateOf("الخدمة متوقفة") }
+    var serviceStatusColor by remember { mutableStateOf(Color.Red) }
 
-    val coroutineScope = rememberCoroutineScope()
+    // BroadcastReceiver to listen for service state changes
+    DisposableEffect(context) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.getStringExtra(ManusAccessibilityService.EXTRA_STATE)) {
+                    ManusAccessibilityService.STATE_CONNECTED -> {
+                        serviceStatus = "الخدمة نشطة"
+                        serviceStatusColor = Color.Green
+                    }
+                    ManusAccessibilityService.STATE_DISCONNECTED -> {
+                        serviceStatus = "الخدمة متوقفة"
+                        serviceStatusColor = Color.Red
+                    }
+                    ManusAccessibilityService.STATE_MODEL_LOAD_FAIL -> {
+                        val message = intent.getStringExtra("EXTRA_MESSAGE") ?: "فشل تحميل النموذج"
+                        serviceStatus = message
+                        serviceStatusColor = Color.Yellow
+                    }
+                }
+            }
+        }
+        val filter = IntentFilter(ManusAccessibilityService.ACTION_SERVICE_STATE_CHANGED)
+        context.registerReceiver(receiver, filter)
+        
+        // Initial check
+        if (isAccessibilityServiceEnabled(context)) {
+             serviceStatus = "الخدمة نشطة"
+             serviceStatusColor = Color.Green
+        } else {
+             serviceStatus = "الخدمة متوقفة"
+             serviceStatusColor = Color.Red
+        }
+
+        onDispose {
+            context.unregisterReceiver(receiver)
+        }
+    }
+
 
     val requestAllFilesAccessLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) {
-        // لا حاجة لإعادة التحقق هنا، LaunchedEffect سيتكفل بذلك
+        // Handled by LaunchedEffect
     }
 
     LaunchedEffect(Unit) {
@@ -73,7 +107,7 @@ fun MainScreen() {
 
             if (allFilesPresent) {
                 filesExist = true
-                copyStatus = "التهيئة مكتملة. الملفات موجودة بالفعل."
+                copyStatus = "اكتملت عملية النسخ بنجاح!"
             } else {
                 copyModelFiles(context) { status ->
                     copyStatus = status
@@ -105,8 +139,8 @@ fun MainScreen() {
 
         if (filesExist) {
             Text(
-                text = if (isAccessibilityServiceEnabled) "الخدمة نشطة" else "الخدمة متوقفة",
-                color = if (isAccessibilityServiceEnabled) Color.Green else Color.Red,
+                text = serviceStatus,
+                color = serviceStatusColor,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             )
@@ -121,29 +155,6 @@ fun MainScreen() {
     }
 }
 
-// دالة جديدة ومحسنة للتحقق من حالة الخدمة
-@Composable
-fun rememberUpdatedAccessibilityState(): State<Boolean> {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val accessibilityState = remember { mutableStateOf(isAccessibilityServiceEnabled(context)) }
-
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                accessibilityState.value = isAccessibilityServiceEnabled(context)
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
-    return accessibilityState
-}
-
-
 private fun hasAllFilesAccess(): Boolean {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         Environment.isExternalStorageManager()
@@ -156,25 +167,17 @@ suspend fun copyModelFiles(context: Context, onStatusUpdate: (String) -> Unit) {
     withContext(Dispatchers.IO) {
         val downloadDir = File("/storage/emulated/0/Download")
         val modelsDir = context.filesDir
-
-        val filesToCopy = listOf(
-            "phi3.onnx",
-            "phi3.onnx.data",
-            "tokenizer.json"
-        )
+        val filesToCopy = listOf("phi3.onnx", "phi3.onnx.data", "tokenizer.json")
 
         try {
             filesToCopy.forEachIndexed { index, fileName ->
                 val sourceFile = File(downloadDir, fileName)
                 val destFile = File(modelsDir, fileName)
-
                 if (!sourceFile.exists()) {
                     onStatusUpdate("خطأ: لم يتم العثور على الملف المصدر ${sourceFile.path}")
                     return@withContext
                 }
-
                 onStatusUpdate("جاري نسخ الملف ${index + 1}/${filesToCopy.size}: $fileName...")
-
                 sourceFile.inputStream().use { input ->
                     FileOutputStream(destFile).use { output ->
                         input.copyTo(output)
