@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Manus Agent</string>
+    
+    <!-- السطر الجديد الذي تم إضافته -->
+    <string name="accessibility_service_label">Manus Agent Service</string>
+
     <string name="accessibility_service_description">Manus Agent - AI-Powered Android Automation\n\nيتيح هذا التطبيق للذكاء الاصطناعي التحكم في جهازك لتنفيذ المهام تلقائياً. يمكنه:\n\n• قراءة محتوى الشاشة\n• النقر على العناصر\n• كتابة النصوص\n• التمرير والتنقل\n\nيرجى تمكين هذه الخدمة فقط إذا كنت تثق في التطبيق.</string>
     <string name="enable_accessibility_title">تمكين خدمة الوصولية</string>
     <string name="enable_accessibility_message">لكي يعمل Manus Agent، يجب تمكين خدمة الوصولية. انقر على الزر أدناه للانتقال إلى الإعدادات.</string>
@@ -13,4 +17,3 @@
     <string name="task_completed">تم إنجاز المهمة بنجاح</string>
     <string name="task_failed">فشل في تنفيذ المهمة</string>
 </resources>
-
