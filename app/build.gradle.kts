@@ -52,9 +52,9 @@ android {
         compose = true
     }
     composeOptions {
-        // --- THE FIX IS HERE ---
+        // --- THE FINAL FIX IS HERE ---
         // Updated the version to match Kotlin 1.9.20
-        kotlinCompilerExtensionVersion = "1.5.3" 
+        kotlinCompilerExtensionVersion = "1.5.4" 
         // --- END OF FIX ---
     }
     packaging {
