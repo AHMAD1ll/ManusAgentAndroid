@@ -3,7 +3,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.Properties
-import java.util.Base64 // **الإصلاح هنا**
+import java.util.Base64
 
 plugins {
     id("com.android.application")
@@ -31,8 +31,8 @@ android {
             val storeFileBase64 = System.getenv("MY_SIGNING_KEY_BASE64")
 
             if (storeFileBase64 != null) {
-                val signingKeyFile = File(buildDir, "signing_key.keystore")
-                // الآن سيعمل هذا السطر بشكل صحيح
+                // **الإصلاح هنا: تغيير مكان حفظ الملف**
+                val signingKeyFile = File(rootProject.projectDir, "signing_key.keystore")
                 signingKeyFile.writeBytes(Base64.getDecoder().decode(storeFileBase64))
                 this.storeFile = signingKeyFile
                 this.storePassword = storePassword
