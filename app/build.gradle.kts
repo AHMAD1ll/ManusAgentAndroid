@@ -19,11 +19,11 @@ fun generateVersionName(): String {
 android {
     namespace = "com.example.manusagentapp"
     compileSdk = 34
-    targetSdk = 34
 
     defaultConfig {
         applicationId = "com.example.manusagentapp"
         minSdk = 24
+        targetSdk = 34 // تم نقله إلى هنا
         versionCode = generateVersionCode()
         versionName = generateVersionName()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
