@@ -55,7 +55,6 @@ fun MainScreen() {
     val context = LocalContext.current
     var serviceEnabled by remember { mutableStateOf(false) }
 
-    // التحقق الأولي وتحديث حالة الخدمة
     DisposableEffect(context) {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
@@ -69,7 +68,6 @@ fun MainScreen() {
         val filter = IntentFilter(ManusAccessibilityService.ACTION_SERVICE_STATE_CHANGED)
         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
 
-        // التحقق من الحالة عند بدء التشغيل
         serviceEnabled = isAccessibilityServiceEnabled(context)
 
         onDispose {
@@ -77,7 +75,6 @@ fun MainScreen() {
         }
     }
 
-    // *** الإصلاح الرئيسي هنا: التبديل بين الواجهات ***
     if (serviceEnabled) {
         AgentControlScreen()
     } else {
@@ -92,9 +89,7 @@ fun InitialSetupScreen() {
 
     val requestAllFilesAccessLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
-    ) {
-        // يتم التعامل مع النتيجة في LaunchedEffect
-    }
+    ) { /* Handled by LaunchedEffect */ }
 
     LaunchedEffect(Unit) {
         if (hasAllFilesAccess()) {
@@ -124,10 +119,8 @@ fun InitialSetupScreen() {
     ) {
         Text("Manus Agent Setup", fontSize = 32.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(32.dp))
-
         Text(setupStatus, fontSize = 16.sp)
         Spacer(modifier = Modifier.height(16.dp))
-
         Button(onClick = {
             val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
             context.startActivity(intent)
@@ -142,9 +135,9 @@ fun AgentControlScreen() {
     var command by remember { mutableStateOf("") }
     var agentStatus by remember { mutableStateOf("جاهز لاستقبال الأوامر") }
     var serviceStatusColor by remember { mutableStateOf(Color.Green) }
+    val context = LocalContext.current
 
-    // يمكننا إضافة BroadcastReceiver هنا للاستماع لحالة النموذج
-     DisposableEffect(Unit) {
+    DisposableEffect(context) {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.getStringExtra(ManusAccessibilityService.EXTRA_STATE)) {
@@ -160,10 +153,9 @@ fun AgentControlScreen() {
             }
         }
         val filter = IntentFilter(ManusAccessibilityService.ACTION_SERVICE_STATE_CHANGED)
-        ContextCompat.registerReceiver(LocalContext.current, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
-        onDispose { LocalContext.current.unregisterReceiver(receiver) }
+        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+        onDispose { context.unregisterReceiver(receiver) }
     }
-
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -172,7 +164,6 @@ fun AgentControlScreen() {
     ) {
         Text("Manus Agent", fontSize = 32.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
-
         Text(
             text = agentStatus,
             color = serviceStatusColor,
@@ -180,7 +171,6 @@ fun AgentControlScreen() {
             fontSize = 16.sp
         )
         Spacer(modifier = Modifier.height(32.dp))
-
         OutlinedTextField(
             value = command,
             onValueChange = { command = it },
@@ -188,15 +178,13 @@ fun AgentControlScreen() {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
-
         Button(onClick = { /* TODO: إرسال الأمر إلى الخدمة */ }) {
             Text("بدء المهمة")
         }
     }
 }
 
-
-// --- الدوال المساعدة (تبقى كما هي) ---
+// --- الدوال المساعدة (تم نقلها إلى المستوى الأعلى) ---
 
 private fun hasAllFilesAccess(): Boolean {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
