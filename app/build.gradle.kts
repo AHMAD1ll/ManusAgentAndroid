@@ -1,6 +1,8 @@
+import java.io.FileInputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -20,10 +22,31 @@ android {
     namespace = "com.example.manusagentapp"
     compileSdk = 34
 
+    // --- الجزء الجديد الخاص بالتوقيع ---
+    signingConfigs {
+        create("release") {
+            // استخدام الأسرار من GitHub Actions
+            val keyAlias = System.getenv("MY_SIGNING_KEY_ALIAS")
+            val keyPassword = System.getenv("MY_SIGNING_KEY_PASSWORD")
+            val storePassword = System.getenv("MY_SIGNING_KEY_PASSWORD") // عادة نفس كلمة المرور
+            val storeFileBase64 = System.getenv("MY_SIGNING_KEY_BASE64")
+
+            if (storeFileBase64 != null) {
+                val signingKeyFile = File(buildDir, "signing_key.keystore")
+                signingKeyFile.writeBytes(java.util.Base64.getDecoder().decode(storeFileBase64))
+                this.storeFile = signingKeyFile
+                this.storePassword = storePassword
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
+            }
+        }
+    }
+    // ---------------------------------
+
     defaultConfig {
         applicationId = "com.example.manusagentapp"
         minSdk = 24
-        targetSdk = 34 // تم نقله إلى هنا
+        targetSdk = 34
         versionCode = generateVersionCode()
         versionName = generateVersionName()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -39,7 +62,16 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // --- الجزء الجديد الخاص بالتوقيع ---
+            signingConfig = signingConfigs.getByName("release")
+            // ---------------------------------
         }
+        // --- الجزء الجديد الخاص بالتوقيع ---
+        // سنجعل نسخة الـ debug تستخدم نفس توقيع الـ release
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("release")
+        }
+        // ---------------------------------
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
