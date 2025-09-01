@@ -31,7 +31,6 @@ android {
             val storeFileBase64 = System.getenv("MY_SIGNING_KEY_BASE64")
 
             if (storeFileBase64 != null) {
-                // **الإصلاح هنا: تغيير مكان حفظ الملف**
                 val signingKeyFile = File(rootProject.projectDir, "signing_key.keystore")
                 signingKeyFile.writeBytes(Base64.getDecoder().decode(storeFileBase64))
                 this.storeFile = signingKeyFile
@@ -88,8 +87,11 @@ android {
 }
 
 dependencies {
+    // *** التعديلات هنا لضمان التوافق وحل المشكلة ***
+    implementation("androidx.core:core-ktx:1.13.1") // التأكد من وجود هذه التبعية الأساسية
+    implementation("androidx.appcompat:appcompat:1.7.0") // إضافة تبعية مهمة للتوافق
+    
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.18.0")
-    implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.1")
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation(platform("androidx.compose:compose-bom:2024.05.00"))
