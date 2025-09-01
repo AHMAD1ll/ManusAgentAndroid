@@ -11,8 +11,9 @@ import android.provider.Settings
 import android.text.TextUtils
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult // <<< IMPORT ADDED
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts // <<< IMPORT ADDED
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -62,9 +63,13 @@ fun AppContent() {
     if (hasStoragePermission) {
         MainScreen()
     } else {
+        // Show the request screen and launch the permission request when the button is clicked.
         PermissionRequestScreen {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+            } else {
+                // On Android 13+, this permission is not needed for our logic, so we can consider it granted.
+                hasStoragePermission = true
             }
         }
     }
@@ -74,7 +79,7 @@ fun AppContent() {
 fun MainScreen() {
     val context = LocalContext.current
     var copyStatus by remember { mutableStateOf("في الانتظار...") }
-    var isAccessibilityServiceEnabled by remember { mutableStateOf(false) }
+    var isAccessibilityServiceEnabled by remember { mutableStateOf(isAccessibilityServiceEnabled(context)) }
 
     // This effect will run once to start the file copy process
     LaunchedEffect(Unit) {
@@ -84,9 +89,12 @@ fun MainScreen() {
     }
 
     // This effect will run periodically to check the accessibility service status
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isAccessibilityServiceEnabled) {
         while (true) {
-            isAccessibilityServiceEnabled = isAccessibilityServiceEnabled(context)
+            val newState = isAccessibilityServiceEnabled(context)
+            if (newState != isAccessibilityServiceEnabled) {
+                isAccessibilityServiceEnabled = newState
+            }
             delay(1000) // Check every second
         }
     }
@@ -128,14 +136,20 @@ fun MainScreen() {
 // Helper function to check if the accessibility service is enabled
 fun isAccessibilityServiceEnabled(context: Context): Boolean {
     val expectedComponentName = "com.example.manusagentapp/.service.ManusAccessibilityService"
-    val enabledServicesSetting = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
-    val colonSplitter = TextUtils.SimpleStringSplitter(':')
-    colonSplitter.setString(enabledServicesSetting)
-    while (colonSplitter.hasNext()) {
-        val componentName = colonSplitter.next()
-        if (componentName.equals(expectedComponentName, ignoreCase = true)) {
-            return true
+    try {
+        val enabledServicesSetting = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
+        if (enabledServicesSetting != null) {
+            val colonSplitter = TextUtils.SimpleStringSplitter(':')
+            colonSplitter.setString(enabledServicesSetting)
+            while (colonSplitter.hasNext()) {
+                val componentName = colonSplitter.next()
+                if (componentName.equals(expectedComponentName, ignoreCase = true)) {
+                    return true
+                }
+            }
         }
+    } catch (e: Exception) {
+        Log.e("AccessibilityCheck", "Error checking accessibility service", e)
     }
     return false
 }
