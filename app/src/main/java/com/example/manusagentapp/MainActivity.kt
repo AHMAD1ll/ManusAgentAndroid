@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
+import android.view.accessibility.AccessibilityManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -18,9 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.example.manusagentapp.ui.theme.ManusAgentAppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -49,24 +53,16 @@ fun MainScreen() {
     val context = LocalContext.current
     var copyStatus by remember { mutableStateOf("التحقق من الأذونات...") }
     var filesExist by remember { mutableStateOf(false) }
-    val isAccessibilityServiceEnabled by isAccessibilityServiceEnabledAsState()
+    
+    // تم تعديل هذه الدالة بالكامل
+    val isAccessibilityServiceEnabled by rememberUpdatedAccessibilityState()
+
     val coroutineScope = rememberCoroutineScope()
 
     val requestAllFilesAccessLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) {
-        coroutineScope.launch {
-            if (hasAllFilesAccess()) {
-                copyModelFiles(context) { status ->
-                    copyStatus = status
-                    if (status.contains("اكتملت")) {
-                        filesExist = true
-                    }
-                }
-            } else {
-                copyStatus = "تم رفض إذن الوصول لكل الملفات. لا يمكن المتابعة."
-            }
-        }
+        // لا حاجة لإعادة التحقق هنا، LaunchedEffect سيتكفل بذلك
     }
 
     LaunchedEffect(Unit) {
@@ -125,6 +121,29 @@ fun MainScreen() {
     }
 }
 
+// دالة جديدة ومحسنة للتحقق من حالة الخدمة
+@Composable
+fun rememberUpdatedAccessibilityState(): State<Boolean> {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val accessibilityState = remember { mutableStateOf(isAccessibilityServiceEnabled(context)) }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                accessibilityState.value = isAccessibilityServiceEnabled(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+    return accessibilityState
+}
+
+
 private fun hasAllFilesAccess(): Boolean {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         Environment.isExternalStorageManager()
@@ -167,27 +186,6 @@ suspend fun copyModelFiles(context: Context, onStatusUpdate: (String) -> Unit) {
             onStatusUpdate("فشل نسخ الملف: ${e.message}")
         }
     }
-}
-
-@Composable
-fun isAccessibilityServiceEnabledAsState(): State<Boolean> {
-    val context = LocalContext.current
-    val enabledState = remember { mutableStateOf(isAccessibilityServiceEnabled(context)) }
-
-    DisposableEffect(context) {
-        val accessibilityManager = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as android.view.accessibility.AccessibilityManager
-
-        val listener = android.view.accessibility.AccessibilityManager.AccessibilityStateChangeListener { isEnabled ->
-            enabledState.value = isEnabled && isAccessibilityServiceEnabled(context)
-        }
-
-        accessibilityManager.addAccessibilityStateChangeListener(listener)
-
-        onDispose {
-            accessibilityManager.removeAccessibilityStateChangeListener(listener)
-        }
-    }
-    return enabledState
 }
 
 private fun isAccessibilityServiceEnabled(context: Context): Boolean {
