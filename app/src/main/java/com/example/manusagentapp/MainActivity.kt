@@ -2,7 +2,10 @@ package com.example.manusagentapp
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -19,7 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.manusagentapp.ui.theme.ManusAgentAppTheme
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -45,41 +47,50 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     val context = LocalContext.current
-    var copyStatus by remember { mutableStateOf("التحقق من الملفات...") }
+    var copyStatus by remember { mutableStateOf("التحقق من الأذونات...") }
     var filesExist by remember { mutableStateOf(false) }
     val isAccessibilityServiceEnabled by isAccessibilityServiceEnabledAsState()
-    val coroutineScope = rememberCoroutineScope() // نحصل على CoroutineScope هنا
+    val coroutineScope = rememberCoroutineScope()
 
-    val requestPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            // Permission granted, now copy files
-            coroutineScope.launch(Dispatchers.IO) { // نستخدم الـ scope هنا
+    val requestAllFilesAccessLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        coroutineScope.launch {
+            if (hasAllFilesAccess()) {
                 copyModelFiles(context) { status ->
                     copyStatus = status
-                    if (status.contains("اكتملت")) { // تصحيح بسيط للشرط
+                    if (status.contains("اكتملت")) {
+                        filesExist = true
+                    }
+                }
+            } else {
+                copyStatus = "تم رفض إذن الوصول لكل الملفات. لا يمكن المتابعة."
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (hasAllFilesAccess()) {
+            val modelsDir = context.filesDir
+            val allFilesPresent = listOf("phi3.onnx", "phi3.onnx.data", "tokenizer.json")
+                .all { File(modelsDir, it).exists() }
+
+            if (allFilesPresent) {
+                filesExist = true
+                copyStatus = "التهيئة مكتملة. الملفات موجودة بالفعل."
+            } else {
+                copyModelFiles(context) { status ->
+                    copyStatus = status
+                    if (status.contains("اكتملت")) {
                         filesExist = true
                     }
                 }
             }
         } else {
-            copyStatus = "تم رفض إذن الوصول للملفات. لا يمكن متابعة التهيئة."
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        val modelsDir = context.filesDir
-        val file1 = File(modelsDir, "phi3.onnx")
-        val file2 = File(modelsDir, "phi3.onnx.data")
-        val file3 = File(modelsDir, "tokenizer.json")
-
-        if (file1.exists() && file2.exists() && file3.exists()) {
-            filesExist = true
-            copyStatus = "التهيئة مكتملة. الملفات موجودة بالفعل."
-        } else {
-            // نطلب الإذن هنا
-            requestPermissionLauncher.launch(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+            copyStatus = "نحتاج إذن الوصول لكل الملفات لنسخ نماذج الذكاء الاصطناعي."
+            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+            intent.data = Uri.parse("package:${context.packageName}")
+            requestAllFilesAccessLauncher.launch(intent)
         }
     }
 
@@ -111,6 +122,14 @@ fun MainScreen() {
                 Text("تفعيل خدمة الوصولية")
             }
         }
+    }
+}
+
+private fun hasAllFilesAccess(): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        Environment.isExternalStorageManager()
+    } else {
+        true
     }
 }
 
@@ -159,7 +178,7 @@ fun isAccessibilityServiceEnabledAsState(): State<Boolean> {
         val accessibilityManager = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as android.view.accessibility.AccessibilityManager
 
         val listener = android.view.accessibility.AccessibilityManager.AccessibilityStateChangeListener { isEnabled ->
-            enabledState.value = isEnabled && isAccessibilityServiceEnabled(context) // Re-check our specific service
+            enabledState.value = isEnabled && isAccessibilityServiceEnabled(context)
         }
 
         accessibilityManager.addAccessibilityStateChangeListener(listener)
