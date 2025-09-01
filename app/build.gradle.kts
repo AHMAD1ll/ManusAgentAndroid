@@ -19,11 +19,11 @@ fun generateVersionName(): String {
 android {
     namespace = "com.example.manusagentapp"
     compileSdk = 34
+    targetSdk = 34
 
     defaultConfig {
         applicationId = "com.example.manusagentapp"
         minSdk = 24
-        targetSdk = 34
         versionCode = generateVersionCode()
         versionName = generateVersionName()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -62,9 +62,7 @@ android {
 }
 
 dependencies {
-    // السطر الجديد الذي أضفناه
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.18.0")
-
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.1")
     implementation("androidx.activity:activity-compose:1.9.0")
