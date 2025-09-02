@@ -1,4 +1,4 @@
-// *** الإصلاح الحاسم هنا: إضافة جمل import اللازمة ***
+// ... (كل شيء في الأعلى يبقى كما هو) ...
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -9,21 +9,20 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// ... (الدوال لا تتغير) ...
 fun generateVersionCode(): Int {
     return (System.currentTimeMillis() / 1000).toInt()
 }
 
 fun generateVersionName(): String {
-    // الآن، سيعمل هذا السطر بشكل صحيح بسبب جمل import أعلاه
     val date = SimpleDateFormat("yyyy.MM.dd.HHmm", Locale.getDefault()).format(Date())
     return "1.0.$date"
 }
 
 android {
+    // ... (كل إعدادات android لا تتغير) ...
     namespace = "com.example.manusagentapp"
     compileSdk = 34
-
-    // ... (كل إعدادات android الأخرى لا تتغير) ...
     signingConfigs {
         create("release") {
             val keyAlias = System.getenv("MY_SIGNING_KEY_ALIAS")
@@ -41,7 +40,6 @@ android {
             }
         }
     }
-
     defaultConfig {
         applicationId = "com.example.manusagentapp"
         minSdk = 24
@@ -53,7 +51,6 @@ android {
             useSupportLibrary = true
         }
     }
-
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -88,7 +85,7 @@ android {
 }
 
 dependencies {
-    // === تجربة العزل: سنبقي على الأساسيات فقط ===
+    // === تجربة العزل النهائية ===
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.1")
     implementation("androidx.activity:activity-compose:1.9.0")
@@ -99,11 +96,11 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
 
-    // === تم تعطيل هذه المكتبات مؤقتًا لتحديد مصدر المشكلة ===
-    // implementation("androidx.appcompat:appcompat:1.7.0")
+    // === تم تعطيل كل المكتبات المشتبه بها ===
+    // implementation("androidx.appcompat:appcompat:1.7.0") // *** معطل الآن ***
     // implementation("com.microsoft.onnxruntime:onnxruntime-android:1.18.0")
     
-    // === تم تعطيل تبعيات الاختبار مؤقتًا ===
+    // ... (بقية التبعيات المعطلة تبقى معطلة) ...
     // testImplementation("junit:junit:4.13.2")
     // androidTestImplementation("androidx.test.ext:junit:1.1.5")
     // androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
