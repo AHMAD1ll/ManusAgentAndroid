@@ -97,7 +97,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
 
     // === تم تعطيل كل المكتبات المشتبه بها ===
-    // implementation("androidx.appcompat:appcompat:1.7.0") // *** معطل الآن ***
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.18.0")
     
     // ... (بقية التبعيات المعطلة تبقى معطلة)
