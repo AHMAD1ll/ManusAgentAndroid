@@ -1,6 +1,3 @@
-// المسار: app/src/main/java/com/example/manusagentapp/MainActivity.kt
-// (استبدل محتوى الملف بالكامل)
-
 package com.example.manusagentapp
 
 import android.content.BroadcastReceiver
@@ -12,7 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
-import androidx.activity.ComponentActivity
+// import androidx.activity.ComponentActivity // تم استبداله بالمسار الكامل أدناه
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,7 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-// import com.example.manusagentapp.service.ManusAccessibilityService // *** الإصلاح: تم حذف هذا السطر ***
 import com.example.manusagentapp.ui.theme.ManusAgentAppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -35,7 +31,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
-class MainActivity : ComponentActivity() {
+// *** الإصلاح هنا: استخدام المسار الكامل لـ ComponentActivity لتجنب أي تعارض مع appcompat ***
+class MainActivity : androidx.activity.ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -51,6 +48,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// ... (بقية الكود في MainActivity لا يتغير) ...
 @Composable
 fun MainScreen() {
     val context = LocalContext.current
