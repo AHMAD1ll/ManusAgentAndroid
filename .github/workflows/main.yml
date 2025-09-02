@@ -25,8 +25,9 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
-        gradle-version: '8.3'
-        cache-disabled: true
+        # *** الإصلاح الحاسم والنهائي هنا ***
+        # نحن نجبر GitHub Actions على استخدام الإصدار 8.6، متجاهلين أي إعدادات أخرى.
+        gradle-version: '8.6'
 
     # 4. بناء التطبيق مع التنظيف
     - name: Build with Gradle
@@ -34,7 +35,7 @@ jobs:
         MY_SIGNING_KEY_BASE64: ${{ secrets.MY_SIGNING_KEY_BASE64 }}
         MY_SIGNING_KEY_ALIAS: ${{ secrets.MY_SIGNING_KEY_ALIAS }}
         MY_SIGNING_KEY_PASSWORD: ${{ secrets.MY_SIGNING_KEY_PASSWORD }}
-      run: gradle clean assembleDebug # *** هذا هو التعديل الوحيد والمهم ***
+      run: gradle clean assembleDebug
 
     # 5. رفع ملف APK
     - name: Upload APK
