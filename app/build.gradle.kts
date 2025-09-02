@@ -1,4 +1,3 @@
-// ... (كل شيء في الأعلى يبقى كما هو) ...
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -9,7 +8,6 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-// ... (الدوال لا تتغير) ...
 fun generateVersionCode(): Int {
     return (System.currentTimeMillis() / 1000).toInt()
 }
@@ -20,9 +18,9 @@ fun generateVersionName(): String {
 }
 
 android {
-    // ... (كل إعدادات android لا تتغير) ...
     namespace = "com.example.manusagentapp"
     compileSdk = 34
+
     signingConfigs {
         create("release") {
             val keyAlias = System.getenv("MY_SIGNING_KEY_ALIAS")
@@ -40,6 +38,7 @@ android {
             }
         }
     }
+
     defaultConfig {
         applicationId = "com.example.manusagentapp"
         minSdk = 24
@@ -51,6 +50,7 @@ android {
             useSupportLibrary = true
         }
     }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -75,7 +75,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.13" 
+        kotlinCompilerExtensionVersion = "1.5.13"
     }
     packaging {
         resources {
@@ -85,28 +85,31 @@ android {
 }
 
 dependencies {
-    // === تجربة العزل النهائية ===
+    // Android Core & AppCompat
     implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.1")
     implementation("androidx.activity:activity-compose:1.9.0")
-    
-    implementation(platform("androidx.compose:compose-bom:2024.06.00")) 
+
+    // Jetpack Compose
+    val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
+    implementation(composeBom)
+    androidTestImplementation(composeBom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
 
-    // === تم تعطيل كل المكتبات المشتبه بها ===
-    implementation("androidx.appcompat:appcompat:1.7.0")
+    // ONNX Runtime for AI models
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.18.0")
-    
-    // ... (بقية التبعيات المعطلة تبقى معطلة)
-    // testImplementation("junit:junit:4.13.2")
-    // androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    // androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    // androidTestImplementation(platform("androidx.compose:compose-bom:2024.06.00"))
-    // androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    
+
+    // Testing
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+
+    // Debugging
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
