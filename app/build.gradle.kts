@@ -40,7 +40,8 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        // هذا هو السطر الذي تم تصحيحه
+        kotlinCompilerExtensionVersion = "1.5.8" 
     }
     packaging {
         resources {
