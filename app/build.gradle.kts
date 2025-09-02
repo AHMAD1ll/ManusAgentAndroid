@@ -1,50 +1,19 @@
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.Base64
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-}
-
-fun generateVersionCode(): Int {
-    return (System.currentTimeMillis() / 1000).toInt()
-}
-
-fun generateVersionName(): String {
-    val date = SimpleDateFormat("yyyy.MM.dd.HHmm", Locale.getDefault()).format(Date())
-    return "1.0.$date"
 }
 
 android {
     namespace = "com.example.manusagentapp"
     compileSdk = 34
 
-    signingConfigs {
-        create("release") {
-            val keyAlias = System.getenv("MY_SIGNING_KEY_ALIAS")
-            val keyPassword = System.getenv("MY_SIGNING_KEY_PASSWORD")
-            val storePassword = System.getenv("MY_SIGNING_KEY_PASSWORD")
-            val storeFileBase64 = System.getenv("MY_SIGNING_KEY_BASE64")
-
-            if (storeFileBase64 != null) {
-                val signingKeyFile = File(rootProject.projectDir, "signing_key.keystore")
-                signingKeyFile.writeBytes(Base64.getDecoder().decode(storeFileBase64))
-                this.storeFile = signingKeyFile
-                this.storePassword = storePassword
-                this.keyAlias = keyAlias
-                this.keyPassword = keyPassword
-            }
-        }
-    }
-
     defaultConfig {
         applicationId = "com.example.manusagentapp"
         minSdk = 24
         targetSdk = 34
-        versionCode = generateVersionCode()
-        versionName = generateVersionName()
+        versionCode = 1
+        versionName = "1.0"
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -58,10 +27,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
-        }
-        getByName("debug") {
-            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
@@ -75,7 +40,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.13"
+        kotlinCompilerExtensionVersion = "1.5.1"
     }
     packaging {
         resources {
@@ -85,31 +50,26 @@ android {
 }
 
 dependencies {
-    // Android Core & AppCompat
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.1")
-    implementation("androidx.activity:activity-compose:1.9.0")
-
-    // Jetpack Compose
-    val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
-    implementation(composeBom)
-    androidTestImplementation(composeBom)
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation("androidx.activity:activity-compose:1.8.2")
+    implementation(platform("androidx.compose:compose-bom:2023.08.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    
+    // ONNX Runtime
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.17.0")
+    
+    // AppCompat (قد تكون ضرورية لبعض مكونات الواجهة الخلفية)
+    implementation("androidx.appcompat:appcompat:1.6.1")
 
-    // ONNX Runtime for AI models
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.18.0")
-
-    // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-
-    // Debugging
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
