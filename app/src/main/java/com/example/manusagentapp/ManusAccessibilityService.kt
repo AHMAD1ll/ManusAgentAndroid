@@ -6,8 +6,8 @@ import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
-// import ai.onnxruntime.OrtEnvironment  // معطل مؤقتًا
-// import ai.onnxruntime.OrtSession      // معطل مؤقتًا
+import ai.onnxruntime.OrtEnvironment
+import ai.onnxruntime.OrtSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -19,8 +19,8 @@ class ManusAccessibilityService : AccessibilityService() {
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
 
-    // private var ortEnv: OrtEnvironment? = null    // معطل مؤقتًا
-    // private var ortSession: OrtSession? = null  // معطل مؤقتًا
+    private var ortEnv: OrtEnvironment? = null
+    private var ortSession: OrtSession? = null
     private var currentTask: String? = null
 
     companion object {
@@ -29,7 +29,7 @@ class ManusAccessibilityService : AccessibilityService() {
         const val STATE_CONNECTED = "CONNECTED"
         const val STATE_DISCONNECTED = "DISCONNECTED"
         const val STATE_MODEL_LOAD_FAIL = "MODEL_LOAD_FAIL"
-        const val STATE_MODEL_LOAD_SUCCESS = "MODEL_LOAD_SUCCESS"
+        const val STATE_MODEL_LOAD_SUCCESS = "STATE_MODEL_LOAD_SUCCESS"
         const val ACTION_COMMAND = "com.example.manusagentapp.COMMAND"
         const val EXTRA_COMMAND_TEXT = "EXTRA_COMMAND_TEXT"
     }
@@ -38,7 +38,7 @@ class ManusAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         broadcastState(STATE_CONNECTED)
         Toast.makeText(this, "Manus Agent Service: CONNECTED", Toast.LENGTH_SHORT).show()
-        // initializeOrt() // معطل مؤقتًا
+        initializeOrt()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -88,8 +88,6 @@ class ManusAccessibilityService : AccessibilityService() {
         }
     }
 
-    /*
-    // معطل مؤقتًا
     private fun initializeOrt() {
         scope.launch {
             try {
@@ -105,14 +103,13 @@ class ManusAccessibilityService : AccessibilityService() {
             }
         }
     }
-    */
 
     override fun onInterrupt() {}
 
     override fun onUnbind(intent: Intent?): Boolean {
         broadcastState(STATE_DISCONNECTED)
         Toast.makeText(this, "Manus Agent Service: DISCONNECTED", Toast.LENGTH_SHORT).show()
-        // ortSession?.close() // معطل مؤقتًا
+        ortSession?.close()
         job.cancel()
         return super.onUnbind(intent)
     }
